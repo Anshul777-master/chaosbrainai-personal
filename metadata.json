@@ -1,0 +1,6 @@
+{
+  "name": "ChaosBrain AI",
+  "description": "Graph-Driven Continuous Resilience Simulator & Auto-Remediation Patch Generator for cloud-native microservices.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

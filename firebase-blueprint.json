@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role-based access control.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "ENGINEER", "VIEWER"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "ChaosExperimentRecord": {
+      "title": "ChaosExperimentRecord",
+      "description": "Persisted record of chaos experiment execution and blast radius.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "targetServiceId": { "type": "string" },
+        "failureType": { "type": "string" },
+        "intensity": { "type": "number" },
+        "duration": { "type": "number" },
+        "status": { "type": "string" },
+        "blastRadius": { "type": "number" },
+        "affectedServiceIds": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "targetServiceId", "failureType", "status"]
+    },
+    "IncidentRecord": {
+      "title": "IncidentRecord",
+      "description": "Persisted incident record and RCA outcome.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "experimentId": { "type": "string" },
+        "title": { "type": "string" },
+        "severity": { "type": "string" },
+        "affectedServiceId": { "type": "string" },
+        "status": { "type": "string" },
+        "triggerMetric": { "type": "string" },
+        "blastRadius": { "type": "number" },
+        "probableRootCauseId": { "type": "string" },
+        "confidence": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "severity", "affectedServiceId", "status"]
+    },
+    "ChatMessageRecord": {
+      "title": "ChatMessageRecord",
+      "description": "Gemini multi-turn conversation messages with optional search grounding sources.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model", "system"] },
+        "content": { "type": "string" },
+        "model": { "type": "string" },
+        "groundingSources": { "type": "array" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "role", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "UserProfile" },
+      "description": "User profiles indexed by UID"
+    },
+    "/experiments/{experimentId}": {
+      "schema": { "$ref": "ChaosExperimentRecord" },
+      "description": "Chaos experiment history and blast radius logs"
+    },
+    "/incidents/{incidentId}": {
+      "schema": { "$ref": "IncidentRecord" },
+      "description": "Incident history and RCA records"
+    },
+    "/chat_messages/{messageId}": {
+      "schema": { "$ref": "ChatMessageRecord" },
+      "description": "Multi-turn Gemini chat logs and search grounding references"
+    }
+  }
+}

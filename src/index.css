@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #0a0b0e;
+    --bg-sidebar: #0e0f13;
+    --bg-card: #131418;
+    --bg-surface: #18191f;
+    --border-subtle: #21232b;
+    --border-highlight: #333642;
+    --text-primary: #ededef;
+    --text-secondary: #9ea0aa;
+    --text-muted: #656773;
+    --accent-emerald: #10b981;
+    --accent-crimson: #ef4444;
+    --accent-amber: #f59e0b;
+    --accent-violet: #8b5cf6;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Monospace for telemetry and technical identifiers */
+  .font-mono-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}
+
+/* Custom scrollbars for telemetry feeds and logs */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0b0e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #21232b;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333642;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes flowPackets {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-packet-flow {
+  stroke-dasharray: 6 6;
+  animation: flowPackets 1s linear infinite;
+}
+
+/* Subtle glow animation for nodes experiencing an active incident */
+@keyframes activeIncidentGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px 1px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(239, 68, 68, 0.65);
+    border-color: rgba(239, 68, 68, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 26px 4px rgba(239, 68, 68, 0.7), 0 0 2px 1px rgba(248, 113, 113, 0.95);
+    border-color: rgba(248, 113, 113, 1);
+  }
+}
+
+/* Subtle glow animation for nodes experiencing a high anomaly score */
+@keyframes highAnomalyGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px 1px rgba(245, 158, 11, 0.3), 0 0 0 1px rgba(245, 158, 11, 0.6);
+    border-color: rgba(245, 158, 11, 0.75);
+  }
+  50% {
+    box-shadow: 0 0 22px 3px rgba(245, 158, 11, 0.6), 0 0 2px 1px rgba(251, 191, 36, 0.9);
+    border-color: rgba(251, 191, 36, 1);
+  }
+}
+
+.animate-incident-glow {
+  animation: activeIncidentGlow 2s infinite ease-in-out;
+}
+
+.animate-anomaly-glow {
+  animation: highAnomalyGlow 2.2s infinite ease-in-out;
+}
