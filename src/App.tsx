@@ -26,7 +26,7 @@ import { RCAEngine } from './core/rcaEngine';
 import { RemediationEngine } from './core/remediationEngine';
 import { ResilienceEngine } from './core/resilienceEngine';
 import { Sidebar } from './components/Sidebar';
-import { Topbar } from './components/Topbar';
+import { Topbar, VibrantTheme } from './components/Topbar';
 import { ServiceGraphCanvas } from './components/ServiceGraphCanvas';
 import { LiveExperimentBanner } from './components/LiveExperimentBanner';
 import { NodeDrawer } from './components/NodeDrawer';
@@ -41,6 +41,8 @@ import { ArchitectureDocs } from './components/ArchitectureDocs';
 import { AuditLogDrawer } from './components/AuditLogDrawer';
 import { GeminiChatbot } from './components/GeminiChatbot';
 import { GeminiVoiceAssistant } from './components/GeminiVoiceAssistant';
+import { InteractiveStoryCard } from './components/InteractiveStoryCard';
+import { NonTechGuideModal } from './components/NonTechGuideModal';
 import {
   loginWithGoogle,
   logoutUser,
@@ -52,6 +54,12 @@ import {
   Layers,
   Flame,
   ArrowRight,
+  Shield,
+  Network,
+  AlertTriangle,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 export default function App() {
@@ -87,6 +95,31 @@ export default function App() {
   const [isDocsModalOpen, setIsDocsModalOpen] = useState<boolean>(false);
   const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState<boolean>(false);
   const [isAiAnalyzing, setIsAiAnalyzing] = useState<boolean>(false);
+
+  // Non-Tech Friendly & Accessibility Controls
+  const [fontScale, setFontScale] = useState<number>(() => {
+    const saved = localStorage.getItem('chaosbrain_font_scale');
+    return saved ? Math.min(140, Math.max(80, Number(saved))) : 100;
+  });
+  const [isFriendlyMode, setIsFriendlyMode] = useState<boolean>(true);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState<boolean>(false);
+  const [isCheatSheetOpen, setIsCheatSheetOpen] = useState<boolean>(false);
+  const [vibrantTheme, setVibrantTheme] = useState<VibrantTheme>(() => {
+    const saved = localStorage.getItem('chaosbrain_theme') as any;
+    return saved || 'cyber';
+  });
+
+  // Sync font scale with root documentElement for instantaneous crisp text resizing
+  useEffect(() => {
+    localStorage.setItem('chaosbrain_font_scale', fontScale.toString());
+    document.documentElement.style.fontSize = `${(fontScale / 100) * 16}px`;
+    document.documentElement.style.setProperty('--app-font-scale', (fontScale / 100).toString());
+  }, [fontScale]);
+
+  // Sync theme with root class & localStorage
+  useEffect(() => {
+    localStorage.setItem('chaosbrain_theme', vibrantTheme);
+  }, [vibrantTheme]);
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
@@ -341,6 +374,164 @@ export default function App() {
     addAuditLog('SYSTEM_RESET', 'Cluster', 'Restored all microservices to healthy baseline.');
   };
 
+  const handleRunStory = (storyType: 'payment' | 'database' | 'gateway') => {
+    handleResetSystem();
+    setTimeout(() => {
+      if (storyType === 'payment') {
+        handleLaunchExperiment({
+          targetServiceId: 'payment-service',
+          failureType: 'HIGH_LATENCY',
+          intensity: 85,
+          duration: 30,
+        });
+
+        setTimeout(() => {
+          const inc: Incident = {
+            id: 'INC-4092',
+            title: 'Black Friday Surge: Payment Service High Delay',
+            severity: 'P1_CRITICAL',
+            affectedServiceId: 'payment-service',
+            detectedAt: new Date().toISOString(),
+            status: 'DETECTED',
+            triggerMetric: '10,000 checkout requests spiked latency to 820ms',
+            blastRadius: 37.5,
+            cascadingServices: ['payment-service', 'order-service', 'api-gateway', 'frontend'],
+          };
+          setIncidents([inc]);
+          setSelectedIncident(inc);
+          saveIncidentToFirestore(inc);
+
+          const demoRca = rcaEngine.analyzeIncident(
+            inc,
+            services,
+            dependencies,
+            telemetryHistory
+          );
+          setRca(demoRca);
+
+          const demoRem = remediationEngine.generateRemediation(inc, demoRca, services);
+          setRemediation(demoRem);
+        }, 1200);
+      } else if (storyType === 'database') {
+        handleLaunchExperiment({
+          targetServiceId: 'inventory-service',
+          failureType: 'DATABASE_FAILURE',
+          intensity: 90,
+          duration: 30,
+        });
+
+        setTimeout(() => {
+          const inc: Incident = {
+            id: 'INC-5104',
+            title: 'Cloud Database Disconnect: Inventory DB Down',
+            severity: 'P1_CRITICAL',
+            affectedServiceId: 'inventory-service',
+            detectedAt: new Date().toISOString(),
+            status: 'DETECTED',
+            triggerMetric: 'Database connection pool exhausted (0 available)',
+            blastRadius: 37.5,
+            cascadingServices: ['inventory-service', 'order-service', 'api-gateway'],
+          };
+          setIncidents([inc]);
+          setSelectedIncident(inc);
+          saveIncidentToFirestore(inc);
+
+          const demoRca = rcaEngine.analyzeIncident(
+            inc,
+            services,
+            dependencies,
+            telemetryHistory
+          );
+          setRca(demoRca);
+
+          const demoRem = remediationEngine.generateRemediation(inc, demoRca, services);
+          setRemediation(demoRem);
+        }, 1200);
+      } else {
+        handleLaunchExperiment({
+          targetServiceId: 'api-gateway',
+          failureType: 'CPU_STRESS',
+          intensity: 95,
+          duration: 30,
+        });
+
+        setTimeout(() => {
+          const inc: Incident = {
+            id: 'INC-3810',
+            title: 'Gateway CPU Overheat: Ingress Saturation',
+            severity: 'P2_HIGH',
+            affectedServiceId: 'api-gateway',
+            detectedAt: new Date().toISOString(),
+            status: 'DETECTED',
+            triggerMetric: 'API Gateway CPU pinned at 96% utilization',
+            blastRadius: 50.0,
+            cascadingServices: ['api-gateway', 'frontend', 'order-service'],
+          };
+          setIncidents([inc]);
+          setSelectedIncident(inc);
+          saveIncidentToFirestore(inc);
+
+          const demoRca = rcaEngine.analyzeIncident(
+            inc,
+            services,
+            dependencies,
+            telemetryHistory
+          );
+          setRca(demoRca);
+
+          const demoRem = remediationEngine.generateRemediation(inc, demoRca, services);
+          setRemediation(demoRem);
+        }, 1200);
+      }
+    }, 150);
+  };
+
+  const handleAutoFix = () => {
+    if (user.role === 'VIEWER') {
+      alert('VIEWER role cannot apply remediation patches.');
+      return;
+    }
+    const targetIds = ['payment-service', 'inventory-service', 'order-service', 'api-gateway', 'frontend'];
+    setIsRemediationApplied(true);
+    setRemediatedServices((prev) => new Set([...prev, ...targetIds]));
+    setServices((prev) =>
+      prev.map((s) => {
+        if (targetIds.includes(s.id)) {
+          return {
+            ...s,
+            health: 'HEALTHY',
+            healthScore: 98,
+            config: {
+              ...s.config,
+              circuitBreakerEnabled: true,
+              timeoutMs: 4500,
+              replicas: Math.max(3, s.config.replicas + 1),
+              fallbackCache: true,
+            },
+            currentMetrics: {
+              ...s.baselineMetrics,
+              latency: Math.round(s.baselineMetrics.latency * 1.05),
+              errorRate: 0.2,
+              availability: 99.9,
+            },
+          };
+        }
+        return s;
+      })
+    );
+    setIncidents((prev) =>
+      prev.map((i) => ({ ...i, status: 'RESOLVED' }))
+    );
+    if (activeExperiment) {
+      setActiveExperiment((prev) => (prev ? { ...prev, status: 'COMPLETED' } : null));
+    }
+    addAuditLog(
+      'AUTO_REPAIR_SUCCESS',
+      'System-AutoHeal',
+      '1-Click Smart Auto-Repair applied! Tripped circuit breakers, expanded replicas, and restored cluster health to 98%.'
+    );
+  };
+
   const handleRunDemoScenario = () => {
     handleResetSystem();
     setTimeout(() => {
@@ -498,7 +689,55 @@ export default function App() {
   const selectedService = services.find((s) => s.id === selectedServiceId) ?? null;
 
   return (
-    <div className="min-h-screen bg-[#0a0b0e] text-[#ededef] flex font-sans select-text">
+    <div
+      className={`min-h-screen text-[#ededef] flex font-sans select-text relative transition-colors duration-300 theme-${vibrantTheme} ${
+        vibrantTheme === 'cyber'
+          ? 'bg-[#090b14]'
+          : vibrantTheme === 'aurora'
+          ? 'bg-[#07110e]'
+          : vibrantTheme === 'sunset'
+          ? 'bg-[#120a0d]'
+          : 'bg-[#0f0919]'
+      }`}
+      style={{ fontSize: `${fontScale}%` }}
+    >
+      {/* Dynamic Ambient Background Aura */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div
+          className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-3xl opacity-25 animate-pulse transition-all duration-700 ${
+            vibrantTheme === 'cyber'
+              ? 'bg-cyan-500'
+              : vibrantTheme === 'aurora'
+              ? 'bg-emerald-500'
+              : vibrantTheme === 'sunset'
+              ? 'bg-amber-500'
+              : 'bg-fuchsia-500'
+          }`}
+        />
+        <div
+          className={`absolute top-1/3 -right-40 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse transition-all duration-700 delay-1000 ${
+            vibrantTheme === 'cyber'
+              ? 'bg-violet-600'
+              : vibrantTheme === 'aurora'
+              ? 'bg-teal-500'
+              : vibrantTheme === 'sunset'
+              ? 'bg-rose-600'
+              : 'bg-indigo-600'
+          }`}
+        />
+        <div
+          className={`absolute -bottom-40 left-1/3 w-96 h-96 rounded-full blur-3xl opacity-15 animate-pulse transition-all duration-700 delay-500 ${
+            vibrantTheme === 'cyber'
+              ? 'bg-emerald-500'
+              : vibrantTheme === 'aurora'
+              ? 'bg-lime-500'
+              : vibrantTheme === 'sunset'
+              ? 'bg-orange-500'
+              : 'bg-pink-500'
+          }`}
+        />
+      </div>
+
       {/* 1. Left Sleek Obsidian Navigation Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -522,7 +761,7 @@ export default function App() {
       />
 
       {/* 2. Main Content Body with Topbar */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative z-10">
         <Topbar
           project={project}
           activeTab={activeTab}
@@ -534,6 +773,14 @@ export default function App() {
           onRunDemoScenario={handleRunDemoScenario}
           onResetSystem={handleResetSystem}
           onSelectIncidentTab={() => setActiveTab('incidents')}
+          fontScale={fontScale}
+          onChangeFontScale={(delta) => setFontScale((prev) => Math.min(140, Math.max(80, prev + delta)))}
+          onSetFontScale={(scale) => setFontScale(Math.min(140, Math.max(80, scale)))}
+          isFriendlyMode={isFriendlyMode}
+          onToggleFriendlyMode={() => setIsFriendlyMode(!isFriendlyMode)}
+          onOpenGuideModal={() => setIsGuideModalOpen(true)}
+          vibrantTheme={vibrantTheme}
+          onChangeVibrantTheme={(th) => setVibrantTheme(th)}
         />
 
         {/* Active Chaos Experiment Banner */}
@@ -554,67 +801,178 @@ export default function App() {
           {/* TAB 1: OPERATIONS CONSOLE (DASHBOARD) */}
           {activeTab === 'dashboard' && (
             <div className="space-y-4">
-              {/* Quick Vital Stats Row */}
+              {/* Interactive Story Playbook for Non-Tech Users */}
+              <InteractiveStoryCard
+                onRunStory={handleRunStory}
+                onAutoFix={handleAutoFix}
+                onReset={handleResetSystem}
+                onOpenGuide={() => setIsGuideModalOpen(true)}
+                activeExperiment={activeExperiment}
+                activeIncident={incidents.find((i) => i.status !== 'RESOLVED') || null}
+                isRemediated={isRemediationApplied}
+                resilienceScore={resilienceScore.overall}
+              />
+
+              {/* Beginner Cheat Sheet / Plain English Explainer Card (Toggleable) */}
+              {isFriendlyMode && (
+                <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-r from-[#111629] via-[#141a32] to-[#0f1426] p-3.5 shadow-md">
+                  <div
+                    className="flex items-center justify-between cursor-pointer select-none"
+                    onClick={() => setIsCheatSheetOpen(!isCheatSheetOpen)}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                          <span>Beginner's Plain-English Cheat Sheet</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                            Non-Tech Guide Active
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-[#919bbd]">
+                          {isCheatSheetOpen ? 'Click to collapse definitions' : 'Click to see what terms like Circuit Breakers and Blast Radius mean in simple human terms'}
+                        </p>
+                      </div>
+                    </div>
+                    <button className="text-[#8e98bd] hover:text-white p-1">
+                      {isCheatSheetOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {isCheatSheetOpen && (
+                    <div className="mt-3 pt-3 border-t border-[#202947] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs animate-in fade-in duration-200">
+                      <div className="p-2.5 rounded-lg bg-[#161c36] border border-[#2b355e]">
+                        <span className="font-bold text-cyan-300 block mb-0.5">⚡ Chaos Experiment</span>
+                        <span className="text-[#a5b0d6] text-[11px] leading-relaxed block">
+                          Intentionally simulating server lag or crashes so we discover weaknesses before real users ever see an error!
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#161c36] border border-[#2b355e]">
+                        <span className="font-bold text-emerald-300 block mb-0.5">🛡️ Circuit Breaker</span>
+                        <span className="text-[#a5b0d6] text-[11px] leading-relaxed block">
+                          Just like the fuse box in your home: if one service is failing, it trips the safety switch so the rest of the site stays up!
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#161c36] border border-[#2b355e]">
+                        <span className="font-bold text-amber-300 block mb-0.5">💥 Blast Radius</span>
+                        <span className="text-[#a5b0d6] text-[11px] leading-relaxed block">
+                          How far the problem spreads to other apps. Our goal is 0% blast radius so customers can keep shopping uninterrupted.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Vital Stats Row (Enhanced with Vibrant Themes & Plain English) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono-code">
-                <div className="bg-[#121318] border border-[#1f2128] p-3 rounded-md">
-                  <span className="text-[#717380] text-[10px] uppercase block">Resilience Index</span>
-                  <div className="flex items-baseline gap-1 mt-0.5">
+                {/* Stat 1: Resilience Index */}
+                <div className={`p-3.5 rounded-xl border transition-all ${
+                  vibrantTheme === 'aurora'
+                    ? 'bg-gradient-to-br from-emerald-950/40 via-[#0e1815] to-[#07130f] border-emerald-500/40 shadow-lg shadow-emerald-950/30'
+                    : vibrantTheme === 'sunset'
+                    ? 'bg-gradient-to-br from-amber-950/40 via-[#191012] to-[#12080a] border-amber-500/40 shadow-lg shadow-amber-950/30'
+                    : vibrantTheme === 'synthwave'
+                    ? 'bg-gradient-to-br from-fuchsia-950/40 via-[#180f24] to-[#100918] border-fuchsia-500/40 shadow-lg shadow-fuchsia-950/30'
+                    : 'bg-gradient-to-br from-cyan-950/40 via-[#111628] to-[#0c101c] border-cyan-500/40 shadow-lg shadow-cyan-950/30'
+                }`}>
+                  <span className="text-[#848ea8] text-[10px] uppercase font-bold tracking-wider block">
+                    {isFriendlyMode ? 'Cluster Health Rating' : 'Resilience Index'}
+                  </span>
+                  <div className="flex items-baseline gap-1.5 mt-1">
                     <span
-                      className={`text-xl font-bold ${
+                      className={`text-2xl font-black ${
                         resilienceScore.overall >= 80
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]'
                           : resilienceScore.overall >= 60
-                          ? 'text-amber-400'
-                          : 'text-red-400'
+                          ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                          : 'text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]'
                       }`}
                     >
                       {resilienceScore.overall}
                     </span>
-                    <span className="text-[10px] text-[#555763]">/ 100</span>
+                    <span className="text-[11px] text-[#5c6684]">/ 100</span>
                   </div>
-                  <span className="text-[10px] text-[#717380] mt-1 block">
-                    {resilienceScore.overall >= 80 ? 'Target Achieved' : 'Degraded Under Chaos'}
+                  <span className="text-[10px] text-[#8e98bd] mt-1 block">
+                    {isFriendlyMode
+                      ? (resilienceScore.overall >= 80 ? '🟢 All Systems High Performance' : '⚠️ Degraded Under Load')
+                      : (resilienceScore.overall >= 80 ? 'Target SLA Achieved' : 'Degraded Under Chaos')}
                   </span>
                 </div>
 
-                <div className="bg-[#121318] border border-[#1f2128] p-3 rounded-md">
-                  <span className="text-[#717380] text-[10px] uppercase block">Microservices Topology</span>
-                  <span className="text-xl font-bold text-white mt-0.5 block">{services.length} Nodes</span>
+                {/* Stat 2: Microservices Topology */}
+                <div className={`p-3.5 rounded-xl border transition-all ${
+                  vibrantTheme === 'aurora'
+                    ? 'bg-gradient-to-br from-teal-950/40 via-[#0e1815] to-[#07130f] border-teal-500/40 shadow-lg shadow-teal-950/30'
+                    : vibrantTheme === 'sunset'
+                    ? 'bg-gradient-to-br from-orange-950/40 via-[#191012] to-[#12080a] border-orange-500/40 shadow-lg shadow-orange-950/30'
+                    : vibrantTheme === 'synthwave'
+                    ? 'bg-gradient-to-br from-pink-950/40 via-[#180f24] to-[#100918] border-pink-500/40 shadow-lg shadow-pink-950/30'
+                    : 'bg-gradient-to-br from-indigo-950/40 via-[#111628] to-[#0c101c] border-indigo-500/40 shadow-lg shadow-indigo-950/30'
+                }`}>
+                  <span className="text-[#848ea8] text-[10px] uppercase font-bold tracking-wider block">
+                    {isFriendlyMode ? 'Apps Monitored' : 'Microservices Topology'}
+                  </span>
+                  <span className="text-2xl font-black text-white mt-1 block">
+                    {services.length} Services
+                  </span>
                   <span className="text-[10px] text-emerald-400 mt-1 block">
                     {services.filter((s) => s.health === 'HEALTHY').length} Healthy ·{' '}
-                    <span className="text-red-400">
+                    <span className={services.filter((s) => s.health !== 'HEALTHY').length > 0 ? 'text-red-400 font-bold' : 'text-[#8e98bd]'}>
                       {services.filter((s) => s.health !== 'HEALTHY').length} Degraded
                     </span>
                   </span>
                 </div>
 
-                <div className="bg-[#121318] border border-[#1f2128] p-3 rounded-md">
-                  <span className="text-[#717380] text-[10px] uppercase block">Active Incidents</span>
+                {/* Stat 3: Active Incidents */}
+                <div className={`p-3.5 rounded-xl border transition-all ${
+                  incidents.filter((i) => i.status !== 'RESOLVED').length > 0
+                    ? 'bg-gradient-to-br from-red-950/60 via-[#201016] to-[#14080c] border-red-500/60 shadow-lg shadow-red-950/50 animate-pulse'
+                    : 'bg-gradient-to-br from-[#121626] to-[#0e1220] border-[#222a42]'
+                }`}>
+                  <span className="text-[#848ea8] text-[10px] uppercase font-bold tracking-wider block">
+                    {isFriendlyMode ? 'Active Outages' : 'Active Incidents'}
+                  </span>
                   <span
-                    className={`text-xl font-bold mt-0.5 block ${
+                    className={`text-2xl font-black mt-1 block ${
                       incidents.filter((i) => i.status !== 'RESOLVED').length > 0
-                        ? 'text-red-400'
-                        : 'text-white'
+                        ? 'text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                        : 'text-emerald-400'
                     }`}
                   >
-                    {incidents.filter((i) => i.status !== 'RESOLVED').length} Active
+                    {incidents.filter((i) => i.status !== 'RESOLVED').length > 0
+                      ? `${incidents.filter((i) => i.status !== 'RESOLVED').length} Active Alert`
+                      : '0 Outages'}
                   </span>
-                  <span className="text-[10px] text-[#717380] mt-1 block">
-                    {incidents.length} Total Recorded
+                  <span className="text-[10px] text-[#8e98bd] mt-1 block">
+                    {incidents.filter((i) => i.status !== 'RESOLVED').length > 0
+                      ? '⚠️ Needs Auto-Repair'
+                      : '🟢 All Systems Green'}
                   </span>
                 </div>
 
-                <div className="bg-[#121318] border border-[#1f2128] p-3 rounded-md">
-                  <span className="text-[#717380] text-[10px] uppercase block">Current Blast Radius</span>
+                {/* Stat 4: Blast Radius */}
+                <div className={`p-3.5 rounded-xl border transition-all ${
+                  (activeExperiment?.blastRadius ?? 0) > 0
+                    ? 'bg-gradient-to-br from-amber-950/50 via-[#1e1418] to-[#120a10] border-amber-500/50 shadow-lg shadow-amber-950/30'
+                    : 'bg-gradient-to-br from-[#121626] to-[#0e1220] border-[#222a42]'
+                }`}>
+                  <span className="text-[#848ea8] text-[10px] uppercase font-bold tracking-wider block">
+                    {isFriendlyMode ? 'Damage Spread' : 'Blast Radius'}
+                  </span>
                   <span
-                    className={`text-xl font-bold mt-0.5 block ${
-                      (activeExperiment?.blastRadius ?? 0) > 0 ? 'text-red-400' : 'text-emerald-400'
+                    className={`text-2xl font-black mt-1 block ${
+                      (activeExperiment?.blastRadius ?? 0) > 0 ? 'text-amber-400' : 'text-emerald-400'
                     }`}
                   >
                     {activeExperiment?.blastRadius ?? 0}%
                   </span>
-                  <span className="text-[10px] text-[#717380] mt-1 block">
-                    {activeExperiment?.affectedServiceIds.length ?? 0} Services Cascading
+                  <span className="text-[10px] text-[#8e98bd] mt-1 block">
+                    {(activeExperiment?.blastRadius ?? 0) > 0
+                      ? `${activeExperiment?.affectedServiceIds.length ?? 0} Services Impacted`
+                      : '0 Affected (Contained)'}
                   </span>
                 </div>
               </div>
@@ -975,6 +1333,17 @@ export default function App() {
       {/* Immutable Audit Log Drawer */}
       {isAuditDrawerOpen && (
         <AuditLogDrawer logs={auditLogs} onClose={() => setIsAuditDrawerOpen(false)} />
+      )}
+
+      {/* Beginner Non-Tech Walkthrough Guide Modal */}
+      {isGuideModalOpen && (
+        <NonTechGuideModal
+          onClose={() => setIsGuideModalOpen(false)}
+          onRunStory={(storyType) => {
+            setIsGuideModalOpen(false);
+            handleRunStory(storyType);
+          }}
+        />
       )}
     </div>
   );

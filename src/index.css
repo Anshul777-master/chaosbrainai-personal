@@ -109,3 +109,108 @@
 .animate-anomaly-glow {
   animation: highAnomalyGlow 2.2s infinite ease-in-out;
 }
+
+/* --- VIBRANT COLOR ACCENTS & GLOW CARDS --- */
+.card-vibrant-emerald {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(13, 20, 28, 0.95) 50%, rgba(6, 78, 59, 0.2) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.2);
+}
+
+.card-vibrant-cyan {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(13, 20, 32, 0.95) 50%, rgba(8, 51, 68, 0.2) 100%);
+  border: 1.5px solid rgba(6, 182, 212, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.2);
+}
+
+.card-vibrant-rose {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(26, 15, 22, 0.95) 50%, rgba(76, 5, 25, 0.2) 100%);
+  border: 1.5px solid rgba(244, 63, 94, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(244, 63, 94, 0.2);
+}
+
+.card-vibrant-amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(28, 19, 13, 0.95) 50%, rgba(69, 26, 3, 0.2) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.2);
+}
+
+.card-vibrant-violet {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(20, 16, 32, 0.95) 50%, rgba(46, 16, 101, 0.2) 100%);
+  border: 1.5px solid rgba(139, 92, 246, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(139, 92, 246, 0.2);
+}
+
+/* Subtle rainbow highlight shimmer */
+@keyframes rainbowBorder {
+  0% {
+    border-color: rgba(6, 182, 212, 0.6);
+  }
+  33% {
+    border-color: rgba(139, 92, 246, 0.6);
+  }
+  66% {
+    border-color: rgba(16, 185, 129, 0.6);
+  }
+  100% {
+    border-color: rgba(6, 182, 212, 0.6);
+  }
+}
+
+.animate-rainbow-border {
+  animation: rainbowBorder 6s linear infinite;
+}
+
+/* --- THEME VARIATIONS --- */
+.theme-cyber {
+  --theme-primary: #06b6d4;
+  --theme-secondary: #8b5cf6;
+  --theme-accent: #10b981;
+  --theme-bg-gradient: radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
+                       radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+                       radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+}
+
+.theme-aurora {
+  --theme-primary: #10b981;
+  --theme-secondary: #14b8a6;
+  --theme-accent: #84cc16;
+  --theme-bg-gradient: radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.16) 0%, transparent 45%),
+                       radial-gradient(circle at 85% 20%, rgba(20, 184, 166, 0.14) 0%, transparent 45%),
+                       radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+}
+
+.theme-sunset {
+  --theme-primary: #f59e0b;
+  --theme-secondary: #f97316;
+  --theme-accent: #f43f5e;
+  --theme-bg-gradient: radial-gradient(circle at 15% 15%, rgba(245, 158, 11, 0.16) 0%, transparent 45%),
+                       radial-gradient(circle at 85% 20%, rgba(244, 63, 94, 0.15) 0%, transparent 45%),
+                       radial-gradient(circle at 50% 85%, rgba(249, 115, 22, 0.12) 0%, transparent 50%);
+}
+
+.theme-synthwave {
+  --theme-primary: #d946ef;
+  --theme-secondary: #ec4899;
+  --theme-accent: #3b82f6;
+  --theme-bg-gradient: radial-gradient(circle at 15% 15%, rgba(217, 70, 239, 0.16) 0%, transparent 45%),
+                       radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.14) 0%, transparent 45%),
+                       radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 50%);
+}
+
+.vibrant-glow-cyan {
+  filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.5));
+}
+
+.vibrant-glow-emerald {
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));
+}
+
+.vibrant-glow-amber {
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5));
+}
+
+.vibrant-glow-fuchsia {
+  filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.5));
+}
+

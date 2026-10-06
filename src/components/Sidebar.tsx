@@ -124,33 +124,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }`}
     >
       {/* Brand Header */}
-      <div className="h-14 border-b border-[#1f2128] px-3 flex items-center justify-between">
+      <div className="h-16 border-b border-[#222a42] px-3.5 flex items-center justify-between bg-gradient-to-r from-[#0d101d] to-[#121626]">
         {!isCollapsed ? (
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-[#191b22] border border-[#2c2f3a] flex items-center justify-center text-white">
-              <Zap className="w-4 h-4 text-emerald-400" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-fuchsia-500 flex items-center justify-center text-white shadow-md shadow-cyan-500/30">
+              <Zap className="w-4 h-4 fill-current text-white" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold tracking-tight text-white text-sm">CHAOSBRAIN</span>
-                <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-mono-code bg-emerald-950/40 border border-emerald-800/40 px-1 py-0.2 rounded">
+                <span className="font-extrabold tracking-tight text-white text-sm bg-gradient-to-r from-white via-cyan-100 to-emerald-200 bg-clip-text text-transparent">
+                  CHAOSBRAIN
+                </span>
+                <span className="text-[9px] uppercase tracking-wider text-emerald-300 font-mono-code bg-emerald-950/60 border border-emerald-500/40 px-1 py-0.2 rounded font-bold shadow-xs">
                   AI
                 </span>
               </div>
-              <span className="text-[10px] text-[#717380] font-mono-code block leading-none mt-0.5">
+              <span className="text-[10px] text-[#8e98bd] font-mono-code block leading-none mt-0.5">
                 Resilience & Remediation
               </span>
             </div>
           </div>
         ) : (
-          <div className="mx-auto w-8 h-8 rounded-md bg-[#191b22] border border-[#2c2f3a] flex items-center justify-center text-emerald-400">
-            <Zap className="w-4 h-4" />
+          <div className="mx-auto w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/30">
+            <Zap className="w-4 h-4 fill-current" />
           </div>
         )}
 
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-[#717380] hover:text-white p-1 hover:bg-[#191b22] rounded transition-colors"
+          className="text-[#848ea8] hover:text-white p-1 hover:bg-[#1a2034] rounded-lg transition-colors cursor-pointer"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -162,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {navSections.map((section) => (
           <div key={section.title} className="space-y-1">
             {!isCollapsed && (
-              <span className="px-2.5 text-[10px] uppercase font-mono-code tracking-wider text-[#5a5c68] font-semibold block mb-1">
+              <span className="px-2.5 text-[10px] uppercase font-mono-code tracking-wider text-[#636e92] font-bold block mb-1">
                 {section.title}
               </span>
             )}
@@ -174,15 +176,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   title={isCollapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#1a1c24] text-white shadow-sm font-semibold border border-[#2c2f3a]'
-                      : 'text-[#8e909d] hover:text-white hover:bg-[#14151b]'
+                      ? 'bg-gradient-to-r from-cyan-500/20 via-violet-500/15 to-emerald-500/10 text-cyan-200 border border-cyan-500/40 shadow-md shadow-cyan-950/40 font-bold'
+                      : 'text-[#9aa4c7] hover:text-white hover:bg-[#151928]'
                   }`}
                 >
                   <Icon
-                    className={`w-4 h-4 shrink-0 ${
-                      isActive ? 'text-emerald-400' : 'text-[#717380]'
+                    className={`w-4 h-4 shrink-0 transition-colors ${
+                      isActive
+                        ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]'
+                        : 'text-[#7c86a6]'
                     }`}
                   />
                   {!isCollapsed && (
@@ -196,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </span>
                       )}
                       {item.tag && (
-                        <span className="text-[9px] font-mono-code text-[#717380] bg-[#14151b] px-1 py-0.2 rounded border border-[#22242e]">
+                        <span className="text-[9px] font-mono-code text-cyan-300 bg-cyan-950/50 px-1 py-0.2 rounded border border-cyan-800/50 font-bold">
                           {item.tag}
                         </span>
                       )}
