@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ChaosExperiment,
   Incident,
@@ -8,7 +8,8 @@ import {
   ServiceNode,
 } from '../types';
 import { ReportEngine } from '../core/reportEngine';
-import { X, Printer, Download, FileText } from 'lucide-react';
+import { generateIncidentReportPDF } from '../utils/pdfGenerator';
+import { X, Printer, Download, FileText, FileDown, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 
 interface ReportModalProps {
   experiment: ChaosExperiment | null;
@@ -29,6 +30,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   targetService,
   onClose,
 }) => {
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isPdfSuccess, setIsPdfSuccess] = useState(false);
+
   if (!experiment) return null;
 
   const markdownContent = ReportEngine.generateMarkdownReport({
@@ -44,6 +48,29 @@ export const ReportModal: React.FC<ReportModalProps> = ({
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    try {
+      setIsPdfLoading(true);
+      // Small timeout to allow UI loading state to paint smoothly
+      setTimeout(() => {
+        generateIncidentReportPDF({
+          experiment,
+          incident,
+          rca,
+          remediation,
+          resilienceScore,
+          targetService,
+        });
+        setIsPdfLoading(false);
+        setIsPdfSuccess(true);
+        setTimeout(() => setIsPdfSuccess(false), 3000);
+      }, 100);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      setIsPdfLoading(false);
+    }
+  };
+
   const handleDownload = () => {
     const blob = new Blob([markdownContent], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -56,39 +83,79 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#0e0f13] border border-[#22242e] rounded-lg max-w-4xl w-full shadow-2xl flex flex-col max-h-[90vh] text-xs">
+      <div className="bg-[#0e0f13] border border-[#22242e] rounded-xl max-w-4xl w-full shadow-2xl flex flex-col max-h-[90vh] text-xs animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-4 border-b border-[#22242e] flex items-center justify-between bg-[#13141a]">
+        <div className="p-4 border-b border-[#22242e] flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#13141a] via-[#161a29] to-[#13141a]">
           <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-emerald-400" />
-            <h2 className="font-bold text-sm text-white">
-              Executive Incident & Resilience Report
-            </h2>
-            <span className="font-mono-code text-[10px] text-white bg-[#1a1c24] px-1.5 py-0.5 rounded border border-[#2c2f3a]">
-              {experiment.id}
-            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-sm text-white">
+                  Executive Incident & Resilience Report
+                </h2>
+                <span className="font-mono-code text-[10px] text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/60 font-bold">
+                  {incident?.id || experiment.id}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#8e909d]">
+                RCA Detective findings, cascading propagation chain & auto-patch audit
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Primary Action: Download as PDF */}
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#262833] hover:bg-[#1a1b22] text-[#ededef] font-mono-code transition-colors"
+              onClick={handleDownloadPdf}
+              disabled={isPdfLoading}
+              title="Download professional vector PDF report"
+              className={`flex items-center gap-1.5 font-bold px-3.5 py-1.5 rounded-lg font-mono-code transition-all shadow-md cursor-pointer ${
+                isPdfSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-cyan-950/50'
+              }`}
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print / PDF</span>
+              {isPdfLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Building PDF...</span>
+                </>
+              ) : isPdfSuccess ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Downloaded PDF!</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Download as PDF</span>
+                </>
+              )}
             </button>
 
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 bg-white hover:bg-[#e4e4e7] text-black font-bold px-3 py-1.5 rounded-md font-mono-code transition-colors shadow-sm"
+              title="Download raw Markdown document"
+              className="flex items-center gap-1.5 bg-[#171922] hover:bg-[#202330] border border-[#2b3042] text-[#d1d5db] hover:text-white font-medium px-3 py-1.5 rounded-lg font-mono-code transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Download Markdown</span>
+              <span className="hidden sm:inline">Markdown</span>
+            </button>
+
+            <button
+              onClick={handlePrint}
+              title="Print document or use browser PDF driver"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#262833] hover:bg-[#1a1b22] text-[#8e909d] hover:text-white font-mono-code transition-colors cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Print</span>
             </button>
 
             <button
               onClick={onClose}
-              className="text-[#717380] hover:text-white p-1 hover:bg-[#1a1b22] rounded transition-colors ml-2"
+              className="text-[#717380] hover:text-white p-1 hover:bg-[#1a1b22] rounded-lg transition-colors ml-1 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

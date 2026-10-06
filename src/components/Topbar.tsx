@@ -12,8 +12,13 @@ import {
   Plus,
   HelpCircle,
   Type,
+  GraduationCap,
+  Loader2,
+  Check,
 } from 'lucide-react';
 import { Project, ResilienceScore, Incident, User } from '../types';
+import { HealthPulseDot } from './HealthPulseDot';
+import { generateProfessorGuidePDF } from '../utils/professorGuidePdf';
 
 export type VibrantTheme = 'cyber' | 'aurora' | 'sunset' | 'synthwave';
 
@@ -59,6 +64,21 @@ export const Topbar: React.FC<TopbarProps> = ({
   onChangeVibrantTheme,
 }) => {
   const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false);
+  const [isProfPdfLoading, setIsProfPdfLoading] = useState(false);
+  const [isProfPdfSuccess, setIsProfPdfSuccess] = useState(false);
+
+  const handleDownloadProfessorPdf = async () => {
+    try {
+      setIsProfPdfLoading(true);
+      await generateProfessorGuidePDF();
+      setIsProfPdfLoading(false);
+      setIsProfPdfSuccess(true);
+      setTimeout(() => setIsProfPdfSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error generating professor PDF:', err);
+      setIsProfPdfLoading(false);
+    }
+  };
 
   const getTabLabel = (tab: string) => {
     switch (tab) {
@@ -111,7 +131,12 @@ export const Topbar: React.FC<TopbarProps> = ({
             onClick={onSelectIncidentTab}
             className="flex items-center gap-2 bg-gradient-to-r from-red-950/80 to-rose-950/80 hover:from-red-900/80 hover:to-rose-900/80 border-2 border-red-500/70 px-3 py-1.5 rounded-xl text-red-200 text-xs transition-all shadow-lg shadow-red-950/50 animate-pulse cursor-pointer"
           >
-            <AlertTriangle className="w-4 h-4 text-red-400 animate-bounce" />
+            <HealthPulseDot
+              score={30}
+              status="CRITICAL"
+              hasActiveIncident={true}
+              size="sm"
+            />
             <span className="font-mono-code font-bold">{activeIncident.id}</span>
             <span className="text-[#a1a7c4]">·</span>
             <span className="text-red-200 font-semibold truncate max-w-[120px] hidden lg:inline">
@@ -119,8 +144,12 @@ export const Topbar: React.FC<TopbarProps> = ({
             </span>
           </button>
         ) : (
-          <div className="hidden lg:flex items-center gap-1.5 bg-[#121626] border border-emerald-500/30 px-2.5 py-1.5 rounded-xl text-[11px] font-mono-code text-emerald-300">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="hidden lg:flex items-center gap-2 bg-[#121626] border border-emerald-500/30 px-2.5 py-1.5 rounded-xl text-[11px] font-mono-code text-emerald-300">
+            <HealthPulseDot
+              score={100}
+              status="HEALTHY"
+              size="xs"
+            />
             <span>All Systems Green</span>
           </div>
         )}
@@ -258,6 +287,35 @@ export const Topbar: React.FC<TopbarProps> = ({
         >
           <HelpCircle className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">How It Works</span>
+        </button>
+
+        {/* --- CONTROLLER 5: Complete Professor's Terminology & Architecture PDF Handbook --- */}
+        <button
+          onClick={handleDownloadProfessorPdf}
+          disabled={isProfPdfLoading}
+          className={`flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-md cursor-pointer border ${
+            isProfPdfSuccess
+              ? 'bg-emerald-600 border-emerald-400 text-white shadow-emerald-950/40'
+              : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border-cyan-400/40 text-white shadow-cyan-950/40'
+          }`}
+          title="Download complete publication-grade SRE Terminology & Architecture PDF with photos and diagrams for professor review"
+        >
+          {isProfPdfLoading ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span className="hidden sm:inline">Generating PDF...</span>
+            </>
+          ) : isProfPdfSuccess ? (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">PDF Downloaded!</span>
+            </>
+          ) : (
+            <>
+              <GraduationCap className="w-3.5 h-3.5 text-cyan-200" />
+              <span>Professor Guide (PDF)</span>
+            </>
+          )}
         </button>
 
         {/* Reset Baseline */}

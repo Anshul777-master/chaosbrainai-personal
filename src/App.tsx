@@ -758,6 +758,13 @@ export default function App() {
         onOpenAuditLogs={() => setIsAuditDrawerOpen(true)}
         isCollapsed={isSidebarCollapsed}
         setIsCollapsed={setIsSidebarCollapsed}
+        services={services}
+        selectedServiceId={selectedServiceId}
+        onSelectService={(id) => {
+          setSelectedServiceId(id);
+          setActiveTab('graph');
+        }}
+        activeIncidents={incidents}
       />
 
       {/* 2. Main Content Body with Topbar */}

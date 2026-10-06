@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BookOpen, Copy, Check, X } from 'lucide-react';
+import { BookOpen, Copy, Check, X, GraduationCap, Loader2, Download } from 'lucide-react';
+import { generateProfessorGuidePDF } from '../utils/professorGuidePdf';
 
 interface ArchitectureDocsProps {
   onClose: () => void;
@@ -8,6 +9,21 @@ interface ArchitectureDocsProps {
 export const ArchitectureDocs: React.FC<ArchitectureDocsProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'pipeline' | 'fastapi' | 'docker' | 'schema'>('pipeline');
   const [copied, setCopied] = useState<boolean>(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isPdfSuccess, setIsPdfSuccess] = useState(false);
+
+  const handleDownloadProfessorPdf = async () => {
+    try {
+      setIsPdfLoading(true);
+      await generateProfessorGuidePDF();
+      setIsPdfLoading(false);
+      setIsPdfSuccess(true);
+      setTimeout(() => setIsPdfSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      setIsPdfLoading(false);
+    }
+  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -194,19 +210,50 @@ CREATE TABLE incidents (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-[#0e0f13] border border-[#22242e] rounded-lg max-w-4xl w-full shadow-2xl flex flex-col max-h-[88vh] text-xs">
         {/* Header */}
-        <div className="p-4 border-b border-[#22242e] flex items-center justify-between bg-[#13141a]">
+        <div className="p-4 border-b border-[#22242e] flex flex-wrap items-center justify-between gap-3 bg-[#13141a]">
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-emerald-400" />
             <h2 className="font-bold text-sm text-white">
               System Architecture, FastAPI Engine & Cloud Specifications
             </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="text-[#717380] hover:text-white p-1 hover:bg-[#1a1c22] rounded transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadProfessorPdf}
+              disabled={isPdfLoading}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md border ${
+                isPdfSuccess
+                  ? 'bg-emerald-600 border-emerald-400 text-white'
+                  : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border-cyan-400/40 text-white shadow-cyan-950/40'
+              }`}
+              title="Download publication-grade SRE Terminology & Architecture PDF with photos and diagrams"
+            >
+              {isPdfLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : isPdfSuccess ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Downloaded!</span>
+                </>
+              ) : (
+                <>
+                  <GraduationCap className="w-3.5 h-3.5 text-cyan-200" />
+                  <span>Download Professor's PDF Guide</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onClose}
+              className="text-[#717380] hover:text-white p-1 hover:bg-[#1a1c22] rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Tab selection */}

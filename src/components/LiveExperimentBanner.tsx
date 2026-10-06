@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChaosExperiment, ServiceNode } from '../types';
 import { Flame, Square, Play, Pause } from 'lucide-react';
+import { HealthPulseDot } from './HealthPulseDot';
 
 interface LiveExperimentBannerProps {
   experiment: ChaosExperiment;
@@ -39,10 +40,20 @@ export const LiveExperimentBanner: React.FC<LiveExperimentBannerProps> = ({
               {experiment.id}
             </span>
           </div>
-          <p className="text-[11px] text-[#8e909d]">
-            Target: <strong className="text-white font-mono-code">{targetService?.name ?? experiment.targetServiceId}</strong>
-            <span className="text-[#3b3d48] mx-1.5">|</span>
-            Fault: <span className="text-red-300 font-mono-code">{experiment.failureType}</span> ({experiment.intensity}% intensity)
+          <p className="text-[11px] text-[#8e909d] flex items-center gap-1.5 flex-wrap">
+            <span>Target:</span>
+            <span className="inline-flex items-center gap-1.5 bg-[#1d1f2a] px-2 py-0.5 rounded border border-[#2b3044]">
+              <HealthPulseDot
+                score={targetService?.healthScore ?? 35}
+                status="CRITICAL"
+                hasActiveIncident={true}
+                size="xs"
+              />
+              <strong className="text-white font-mono-code">{targetService?.name ?? experiment.targetServiceId}</strong>
+            </span>
+            <span className="text-[#3b3d48] mx-1">|</span>
+            <span>Fault:</span>
+            <span className="text-red-300 font-mono-code">{experiment.failureType} ({experiment.intensity}% intensity)</span>
           </p>
         </div>
       </div>

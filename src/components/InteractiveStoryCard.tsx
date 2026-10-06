@@ -11,8 +11,11 @@ import {
   AlertTriangle,
   HelpCircle,
   TrendingUp,
+  GraduationCap,
 } from 'lucide-react';
 import { ChaosExperiment, Incident } from '../types';
+import { HealthPulseDot } from './HealthPulseDot';
+import { generateProfessorGuidePDF } from '../utils/professorGuidePdf';
 
 interface InteractiveStoryCardProps {
   onRunStory: (storyType: 'payment' | 'database' | 'gateway') => void;
@@ -60,8 +63,17 @@ export const InteractiveStoryCard: React.FC<InteractiveStoryCardProps> = ({
           </div>
         </div>
 
-        {/* Guide button & Reset */}
-        <div className="flex items-center gap-2">
+        {/* Guide button, Professor PDF & Reset */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => generateProfessorGuidePDF()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/80 to-blue-950/80 hover:from-cyan-900/80 hover:to-blue-900/80 border border-cyan-500/50 text-cyan-200 hover:text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+            title="Download complete 7-page SRE Terminology & Architecture Handbook with photos for your professor"
+          >
+            <GraduationCap className="w-3.5 h-3.5 text-cyan-300" />
+            <span>Professor Guide (PDF)</span>
+          </button>
+
           <button
             onClick={onOpenGuide}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#171c2e] hover:bg-[#222a44] border border-[#2c3554] text-cyan-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
@@ -183,8 +195,9 @@ export const InteractiveStoryCard: React.FC<InteractiveStoryCardProps> = ({
                 <span className="font-extrabold text-sm text-red-300">
                   ⚠️ Live Trouble Detected on System Map!
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-red-950 text-red-400 font-bold border border-red-800">
-                  {activeIncident?.title || 'Chaos Simulation Active'}
+                <span className="text-[10px] px-2 py-0.5 rounded bg-red-950 text-red-400 font-bold border border-red-800 flex items-center gap-1.5">
+                  <HealthPulseDot score={25} status="CRITICAL" hasActiveIncident={true} size="xs" />
+                  <span>{activeIncident?.title || 'Chaos Simulation Active'}</span>
                 </span>
               </div>
               <p className="text-xs text-[#d1d5db] mt-0.5">

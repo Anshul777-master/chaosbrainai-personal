@@ -19,8 +19,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  GraduationCap,
 } from 'lucide-react';
-import { User, Project, Incident } from '../types';
+import { User, Project, Incident, ServiceNode } from '../types';
+import { HealthPulseDot } from './HealthPulseDot';
+import { generateProfessorGuidePDF } from '../utils/professorGuidePdf';
 
 interface SidebarProps {
   activeTab: string;
@@ -38,6 +41,10 @@ interface SidebarProps {
   onOpenAuditLogs: () => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  services?: ServiceNode[];
+  selectedServiceId?: string | null;
+  onSelectService?: (id: string) => void;
+  activeIncidents?: Incident[];
 }
 
 interface NavItem {
@@ -70,7 +77,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAuditLogs,
   isCollapsed,
   setIsCollapsed,
+  services = [],
+  selectedServiceId,
+  onSelectService,
+  activeIncidents = [],
 }) => {
+  const activeIncidentIds = new Set<string>();
+  activeIncidents.forEach((inc) => {
+    if (inc.status !== 'RESOLVED') {
+      activeIncidentIds.add(inc.affectedServiceId);
+      inc.cascadingServices?.forEach((id) => activeIncidentIds.add(id));
+    }
+  });
+
+  const strugglingCount = services.filter(
+    (s) => s.health !== 'HEALTHY' || s.healthScore < 80 || activeIncidentIds.has(s.id)
+  ).length;
   const navSections: NavSection[] = [
     {
       title: 'OBSERVABILITY',
@@ -191,7 +213,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                   {!isCollapsed && (
                     <div className="flex-1 flex items-center justify-between truncate text-left">
-                      <span className="truncate">{item.label}</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">{item.label}</span>
+                        {item.id === 'incidents' && activeIncidentCount > 0 && (
+                          <HealthPulseDot
+                            score={30}
+                            status="CRITICAL"
+                            hasActiveIncident={true}
+                            size="xs"
+                          />
+                        )}
+                      </div>
                       {item.badge && (
                         <span
                           className={`text-[9px] font-mono-code font-bold px-1.5 py-0.2 rounded-full ${item.badgeColor}`}
@@ -211,6 +243,78 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </div>
         ))}
+
+        {/* Cluster Microservices Health Pulse Section */}
+        {services.length > 0 && (
+          <div className="space-y-1 pt-2 border-t border-[#1f2128]">
+            {!isCollapsed ? (
+              <div className="flex items-center justify-between px-2.5 mb-1.5">
+                <span className="text-[10px] uppercase font-mono-code tracking-wider text-[#636e92] font-bold">
+                  SERVICES HEALTH PULSE
+                </span>
+                <span
+                  className={`text-[9px] font-mono-code font-bold px-1.5 py-0.2 rounded-full ${
+                    strugglingCount > 0
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                      : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  }`}
+                >
+                  {strugglingCount > 0 ? `${strugglingCount} Struggling` : 'All 8 Healthy'}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1 py-1" title="Services Health Pulse">
+                <span className="text-[9px] uppercase font-mono-code text-[#636e92] font-bold">SVC</span>
+              </div>
+            )}
+
+            <div className="space-y-0.5">
+              {services.map((svc) => {
+                const isSelected = selectedServiceId === svc.id;
+                const hasIncident = activeIncidentIds.has(svc.id);
+                const isStruggling = svc.health !== 'HEALTHY' || svc.healthScore < 80 || hasIncident;
+
+                return (
+                  <button
+                    key={svc.id}
+                    onClick={() => onSelectService?.(svc.id)}
+                    title={`${svc.name}: ${svc.healthScore}% Health · ${isStruggling ? 'Struggling / Alert' : 'Healthy'}`}
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer text-left ${
+                      isSelected
+                        ? 'bg-[#1b2238] text-white border border-cyan-500/50 shadow-sm'
+                        : isStruggling
+                        ? 'bg-red-950/20 hover:bg-red-950/40 text-[#f1f5f9] border border-red-900/30'
+                        : 'hover:bg-[#151928] text-[#9aa4c7] hover:text-white'
+                    }`}
+                  >
+                    {/* Subtle Color-Coded Health Pulse Indicator Dot */}
+                    <HealthPulseDot
+                      score={svc.healthScore}
+                      status={svc.health}
+                      hasActiveIncident={hasIncident}
+                      size="sm"
+                    />
+
+                    {!isCollapsed ? (
+                      <div className="flex-1 flex items-center justify-between truncate min-w-0">
+                        <span className="truncate font-medium text-[11px]">{svc.name}</span>
+                        <div className="flex items-center gap-1 shrink-0 ml-1.5 font-mono-code">
+                          <span
+                            className={`text-[10px] font-bold ${
+                              isStruggling ? 'text-red-400' : 'text-emerald-400/80'
+                            }`}
+                          >
+                            {svc.healthScore}%
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* System & Tools Section */}
         <div className="space-y-1 pt-2 border-t border-[#1f2128]">
@@ -234,6 +338,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
               </div>
             )}
+          </button>
+
+          <button
+            onClick={() => generateProfessorGuidePDF()}
+            title={isCollapsed ? "Professor's Guide (PDF)" : undefined}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-800/40 transition-colors group cursor-pointer"
+          >
+            <GraduationCap className="w-4 h-4 text-cyan-400 shrink-0 group-hover:scale-110 transition-transform" />
+            {!isCollapsed && <span className="font-semibold">Professor Guide (PDF)</span>}
           </button>
 
           <button

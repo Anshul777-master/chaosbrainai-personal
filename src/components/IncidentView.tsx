@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Search,
 } from 'lucide-react';
+import { HealthPulseDot } from './HealthPulseDot';
 
 interface IncidentViewProps {
   incidents: Incident[];
@@ -125,8 +126,16 @@ export const IncidentView: React.FC<IncidentViewProps> = ({
                   </p>
 
                   <div className="flex items-center justify-between text-[10px] font-mono-code text-[#717380]">
-                    <span>Target: {svc?.name ?? inc.affectedServiceId}</span>
-                    <span className={`px-1 py-0.2 rounded border text-[9px] uppercase ${getStatusBadge(inc.status)}`}>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <HealthPulseDot
+                        score={svc?.healthScore ?? 35}
+                        status={svc?.health ?? 'CRITICAL'}
+                        hasActiveIncident={inc.status !== 'RESOLVED'}
+                        size="xs"
+                      />
+                      <span className="truncate">Target: {svc?.name ?? inc.affectedServiceId}</span>
+                    </div>
+                    <span className={`px-1 py-0.2 rounded border text-[9px] uppercase shrink-0 ${getStatusBadge(inc.status)}`}>
                       {inc.status}
                     </span>
                   </div>
@@ -220,7 +229,13 @@ export const IncidentView: React.FC<IncidentViewProps> = ({
                     <span className="text-[10px] text-purple-400 font-mono-code uppercase tracking-wider block mb-0.5">
                       Probable Root Cause Identified
                     </span>
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-center gap-2">
+                      <HealthPulseDot
+                        score={servicesMap.get(rca.probableRootCauseId)?.healthScore ?? 25}
+                        status="CRITICAL"
+                        hasActiveIncident={true}
+                        size="md"
+                      />
                       <h4 className="text-lg font-bold text-white">
                         {servicesMap.get(rca.probableRootCauseId)?.name ?? rca.probableRootCauseId}
                       </h4>
@@ -248,21 +263,30 @@ export const IncidentView: React.FC<IncidentViewProps> = ({
                   <span className="text-[10px] font-mono-code text-[#717380] uppercase tracking-wider block mb-1.5">
                     Causal Propagation Path (Origin → Affected Callers)
                   </span>
-                  <div className="flex flex-wrap items-center gap-1 font-mono-code text-xs">
-                    {rca.dependencyChain.map((nodeId, idx) => (
-                      <React.Fragment key={nodeId}>
-                        {idx > 0 && <ArrowRight className="w-3.5 h-3.5 text-[#454756]" />}
-                        <span
-                          className={`px-2 py-1 rounded border ${
-                            idx === 0
-                              ? 'border-red-700 bg-red-950/60 text-red-300 font-bold'
-                              : 'border-[#262833] bg-[#14151b] text-[#ededef]'
-                          }`}
-                        >
-                          {servicesMap.get(nodeId)?.name ?? nodeId}
-                        </span>
-                      </React.Fragment>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono-code text-xs">
+                    {rca.dependencyChain.map((nodeId, idx) => {
+                      const chainSvc = servicesMap.get(nodeId);
+                      return (
+                        <React.Fragment key={nodeId}>
+                          {idx > 0 && <ArrowRight className="w-3.5 h-3.5 text-[#454756]" />}
+                          <span
+                            className={`px-2 py-1 rounded border flex items-center gap-1.5 ${
+                              idx === 0
+                                ? 'border-red-700 bg-red-950/60 text-red-300 font-bold'
+                                : 'border-[#262833] bg-[#14151b] text-[#ededef]'
+                            }`}
+                          >
+                            <HealthPulseDot
+                              score={chainSvc?.healthScore ?? (idx === 0 ? 25 : 60)}
+                              status={idx === 0 ? 'CRITICAL' : 'DEGRADED'}
+                              hasActiveIncident={true}
+                              size="xs"
+                            />
+                            <span>{chainSvc?.name ?? nodeId}</span>
+                          </span>
+                        </React.Fragment>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -316,9 +340,16 @@ export const IncidentView: React.FC<IncidentViewProps> = ({
                             #{idx + 1}
                           </span>
                           <div>
-                            <span className="font-bold text-white">
-                              {servicesMap.get(suspect.serviceId)?.name ?? suspect.serviceId}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <HealthPulseDot
+                                score={servicesMap.get(suspect.serviceId)?.healthScore ?? 40}
+                                status={servicesMap.get(suspect.serviceId)?.health ?? 'DEGRADED'}
+                                size="xs"
+                              />
+                              <span className="font-bold text-white">
+                                {servicesMap.get(suspect.serviceId)?.name ?? suspect.serviceId}
+                              </span>
+                            </div>
                             <p className="text-[11px] text-[#8e909d] font-sans mt-0.5">{suspect.reason}</p>
                           </div>
                         </div>
