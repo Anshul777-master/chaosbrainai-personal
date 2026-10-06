@@ -1,4 +1,4 @@
-# CHAOSBRAIN AI
+# CHAOSBRAIN AI --- Hello my name is the BOSS
 ## Graph-Driven Continuous Resilience Simulator & Auto-Remediation Patch Generator
 
 ChaosBrain AI is a cloud-native resilience-testing and automated incident-response platform for distributed microservices. It models infrastructure as a **directed service dependency graph**, simulates controlled failures inside that graph, observes cascading failure propagation and real-time telemetry, determines the probable root cause using graph algorithms and temporal precedence, and generates validated configuration patches to restore system resilience.
