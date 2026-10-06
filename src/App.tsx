@@ -1323,6 +1323,9 @@ export default function App() {
           remediation={remediation}
           resilienceScore={resilienceScore}
           targetService={services.find((s) => s.id === (activeExperiment?.targetServiceId ?? 'payment-service'))}
+          services={services}
+          dependencies={dependencies}
+          telemetryHistory={telemetryHistory}
           onClose={() => setIsReportModalOpen(false)}
         />
       )}

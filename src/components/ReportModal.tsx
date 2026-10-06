@@ -6,10 +6,12 @@ import {
   RemediationAction,
   ResilienceScore,
   ServiceNode,
+  ServiceDependency,
+  TelemetryPoint,
 } from '../types';
 import { ReportEngine } from '../core/reportEngine';
 import { generateIncidentReportPDF } from '../utils/pdfGenerator';
-import { X, Printer, Download, FileText, FileDown, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { X, Printer, Download, FileText, FileDown, CheckCircle2, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 interface ReportModalProps {
   experiment: ChaosExperiment | null;
@@ -18,6 +20,9 @@ interface ReportModalProps {
   remediation: RemediationAction | null;
   resilienceScore: ResilienceScore;
   targetService?: ServiceNode;
+  services?: ServiceNode[];
+  dependencies?: ServiceDependency[];
+  telemetryHistory?: TelemetryPoint[];
   onClose: () => void;
 }
 
@@ -28,6 +33,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   remediation,
   resilienceScore,
   targetService,
+  services,
+  dependencies,
+  telemetryHistory,
   onClose,
 }) => {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
@@ -51,20 +59,28 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const handleDownloadPdf = async () => {
     try {
       setIsPdfLoading(true);
-      // Small timeout to allow UI loading state to paint smoothly
-      setTimeout(() => {
-        generateIncidentReportPDF({
-          experiment,
-          incident,
-          rca,
-          remediation,
-          resilienceScore,
-          targetService,
-        });
-        setIsPdfLoading(false);
-        setIsPdfSuccess(true);
-        setTimeout(() => setIsPdfSuccess(false), 3000);
-      }, 100);
+      // Small timeout to allow UI loading spinner to paint smoothly
+      setTimeout(async () => {
+        try {
+          await generateIncidentReportPDF({
+            experiment,
+            incident,
+            rca,
+            remediation,
+            resilienceScore,
+            targetService,
+            services,
+            dependencies,
+            telemetryHistory,
+          });
+          setIsPdfLoading(false);
+          setIsPdfSuccess(true);
+          setTimeout(() => setIsPdfSuccess(false), 3000);
+        } catch (innerErr) {
+          console.error('Failed to generate PDF:', innerErr);
+          setIsPdfLoading(false);
+        }
+      }, 50);
     } catch (err) {
       console.error('Failed to generate PDF:', err);
       setIsPdfLoading(false);
@@ -178,6 +194,46 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                 <span className="block text-emerald-400 font-bold">STATUS: VERIFIED & COMPLIANT</span>
               </div>
             </div>
+          </div>
+
+          {/* High-Resolution Dashboard Snapshot Integration Callout */}
+          <div className="p-3.5 rounded-lg border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-[#131929] to-blue-950/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-xs">
+                    Live Telemetry Charts & Service Graph Snapshot Integrated
+                  </span>
+                  <span className="text-[10px] font-mono-code text-cyan-300 bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800">
+                    html2canvas 2x High-DPI
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#94a3b8] block mt-0.5">
+                  Downloading as PDF captures the real-time state of the dashboard's service topology and p99 telemetry streams as embedded high-resolution figures.
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isPdfLoading}
+              className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shrink-0 cursor-pointer shadow-md flex items-center gap-1.5"
+            >
+              {isPdfLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Capturing & Building PDF...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Generate Report PDF</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* Section 1: Overview */}

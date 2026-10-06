@@ -135,7 +135,10 @@ export const TelemetryCharts: React.FC<TelemetryChartsProps> = ({
   const cur = selectedService?.currentMetrics;
 
   return (
-    <div className="bg-[#121318] border border-[#1f2128] rounded-lg p-4 space-y-4">
+    <div
+      id="dashboard-telemetry-charts"
+      className="bg-[#121318] border border-[#1f2128] rounded-lg p-4 space-y-4"
+    >
       {/* Header and Service Filter Selector */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1f2128] pb-3">
         <div className="flex items-center gap-2">

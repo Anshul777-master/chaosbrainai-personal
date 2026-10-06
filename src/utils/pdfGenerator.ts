@@ -6,7 +6,13 @@ import {
   RemediationAction,
   ResilienceScore,
   ServiceNode,
+  ServiceDependency,
+  TelemetryPoint,
 } from '../types';
+import {
+  captureDashboardGraphSnapshot,
+  captureDashboardTelemetrySnapshot,
+} from './dashboardCapture';
 
 export interface PDFReportParams {
   experiment: ChaosExperiment;
@@ -15,19 +21,40 @@ export interface PDFReportParams {
   remediation: RemediationAction | null;
   resilienceScore: ResilienceScore;
   targetService?: ServiceNode;
+  graphImageBase64?: string | null;
+  telemetryImageBase64?: string | null;
+  services?: ServiceNode[];
+  dependencies?: ServiceDependency[];
+  telemetryHistory?: TelemetryPoint[];
 }
 
 /**
  * Generates and downloads a high-fidelity, executive-grade PDF incident RCA & remediation report
+ * with embedded high-resolution dashboard snapshots of the Service Graph and Telemetry Charts.
  */
-export function generateIncidentReportPDF({
+export async function generateIncidentReportPDF({
   experiment,
   incident,
   rca,
   remediation,
   resilienceScore,
   targetService,
-}: PDFReportParams): void {
+  graphImageBase64,
+  telemetryImageBase64,
+  services,
+  dependencies,
+  telemetryHistory,
+}: PDFReportParams): Promise<void> {
+  // Capture high-resolution snapshots if not already passed
+  const [graphImg, telemetryImg] = await Promise.all([
+    graphImageBase64
+      ? Promise.resolve(graphImageBase64)
+      : captureDashboardGraphSnapshot(services, dependencies, experiment, incident),
+    telemetryImageBase64
+      ? Promise.resolve(telemetryImageBase64)
+      : captureDashboardTelemetrySnapshot(telemetryHistory, services),
+  ]);
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -51,13 +78,19 @@ export function generateIncidentReportPDF({
   const drawRunningHeader = () => {
     doc.setFillColor(15, 23, 42); // slate-900
     doc.rect(margin, y, contentWidth, 8, 'F');
+
+    doc.setFillColor(6, 182, 212); // cyan accent bar
+    doc.rect(margin, y, contentWidth, 1, 'F');
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(255, 255, 255);
-    doc.text('CHAOSBRAIN AI · INCIDENT POST-MORTEM & REMEDIATION REPORT', margin + 3, y + 5.5);
+    doc.text('CHAOSBRAIN AI · INCIDENT POST-MORTEM & REMEDIATION REPORT', margin + 3.5, y + 5.5);
+
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    doc.text(`ID: ${incident?.id || experiment.id}`, pageWidth - margin - 3, y + 5.5, { align: 'right' });
+    doc.text(`ID: ${incident?.id || experiment.id}`, pageWidth - margin - 3.5, y + 5.5, { align: 'right' });
     y += 12;
   };
 
@@ -71,14 +104,18 @@ export function generateIncidentReportPDF({
 
   // Brand & Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(255, 255, 255);
   doc.text('CHAOSBRAIN AI · SRE INCIDENT & REMEDIATION AUDIT', margin + 6, y + 9);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(148, 163, 184); // slate-400
-  doc.text('Automated Root Cause Analysis (RCA), Cascading Failure Containment & Resilience Verification', margin + 6, y + 15);
+  doc.text(
+    'Automated Root Cause Analysis (RCA), Cascading Failure Containment & Resilience Verification',
+    margin + 6,
+    y + 15
+  );
 
   // Status Badge in Banner
   const statusX = pageWidth - margin - 6;
@@ -90,11 +127,16 @@ export function generateIncidentReportPDF({
   doc.text('VERIFIED & HARDENED', statusX - 22, y + 9.8, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
-  doc.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, statusX, y + 19, { align: 'right' });
+  doc.text(
+    `Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+    statusX,
+    y + 19,
+    { align: 'right' }
+  );
 
-  y += 31;
+  y += 30;
 
   // 2. Incident Summary Grid Cards
   doc.setFillColor(248, 250, 252); // slate-50
@@ -152,7 +194,7 @@ export function generateIncidentReportPDF({
   doc.setTextColor(100, 116, 139);
   doc.text('+33 pts Recovered', margin + colWidth * 3 + 4, y + 17);
 
-  y += 27;
+  y += 26;
 
   // 3. Trigger Metric & Description Box
   if (incident?.triggerMetric || incident?.title) {
@@ -192,11 +234,16 @@ export function generateIncidentReportPDF({
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text('The anomaly originated in the root service and cascaded through dependent upstream microservices:', margin + 4, y + 5);
+  doc.text(
+    'The anomaly originated in the root service and cascaded through dependent upstream microservices:',
+    margin + 4,
+    y + 5
+  );
 
-  const chainNodes = experiment.affectedServiceIds.length > 0
-    ? experiment.affectedServiceIds
-    : ['payment-service', 'order-service', 'api-gateway', 'frontend'];
+  const chainNodes =
+    experiment.affectedServiceIds.length > 0
+      ? experiment.affectedServiceIds
+      : ['payment-service', 'order-service', 'api-gateway', 'frontend'];
 
   let chainX = margin + 4;
   chainNodes.forEach((node, idx) => {
@@ -224,14 +271,90 @@ export function generateIncidentReportPDF({
     }
   });
 
-  y += 21;
+  y += 22;
 
-  // 5. Deterministic Root Cause Analysis (RCA)
+  // 5. HIGH-RESOLUTION SERVICE GRAPH SNAPSHOT (CAPTURED FROM DASHBOARD)
+  if (graphImg) {
+    checkPageBreak(82);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('2. Live Cluster Service Graph Snapshot (Dashboard Capture)', margin, y);
+
+    // High-Resolution badge
+    doc.setFillColor(6, 182, 212);
+    doc.roundedRect(pageWidth - margin - 52, y - 4.5, 52, 6, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('HIGH-RES HTML2CANVAS 2X', pageWidth - margin - 26, y - 0.5, { align: 'center' });
+    y += 4.5;
+
+    try {
+      const imgHeight = 68; // mm
+      doc.addImage(graphImg, 'PNG', margin, y, contentWidth, imgHeight);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(margin, y, contentWidth, imgHeight, 1.2, 1.2, 'S');
+      y += imgHeight + 3;
+
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        'Figure 1: High-resolution visual capture of the live microservice dependency graph and cascading blast radius at the incident peak.',
+        margin + 2,
+        y
+      );
+      y += 8;
+    } catch (err) {
+      console.warn('Error rendering graph image to PDF:', err);
+    }
+  }
+
+  // 6. HIGH-RESOLUTION TELEMETRY CHARTS SNAPSHOT (CAPTURED FROM DASHBOARD)
+  if (telemetryImg) {
+    checkPageBreak(74);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('3. Live Telemetry & SRE Golden Signals (Dashboard Capture)', margin, y);
+
+    // Real-Time badge
+    doc.setFillColor(16, 185, 129);
+    doc.roundedRect(pageWidth - margin - 52, y - 4.5, 52, 6, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('1S STREAM OBSERVABILITY', pageWidth - margin - 26, y - 0.5, { align: 'center' });
+    y += 4.5;
+
+    try {
+      const imgHeight = 58; // mm
+      doc.addImage(telemetryImg, 'PNG', margin, y, contentWidth, imgHeight);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(margin, y, contentWidth, imgHeight, 1.2, 1.2, 'S');
+      y += imgHeight + 3;
+
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        'Figure 2: Real-time time-series telemetry charts captured directly from the dashboard displaying p99 latency surge, error spikes, and saturation.',
+        margin + 2,
+        y
+      );
+      y += 8;
+    } catch (err) {
+      console.warn('Error rendering telemetry image to PDF:', err);
+    }
+  }
+
+  // 7. Deterministic Root Cause Analysis (RCA)
   checkPageBreak(38);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('2. Deterministic Root Cause Analysis (RCA) Findings', margin, y);
+  doc.text('4. Deterministic Root Cause Analysis (RCA) Findings', margin, y);
   y += 5;
 
   doc.setFillColor(248, 250, 252);
@@ -257,13 +380,14 @@ export function generateIncidentReportPDF({
   doc.setFontSize(8);
   doc.setTextColor(51, 65, 85);
 
-  const evidenceItems = rca?.evidence && rca.evidence.length > 0
-    ? rca.evidence
-    : [
-        `Primary anomaly recorded in ${probableRoot} breaching acceptable latency SLO`,
-        'Dependent callers lacked circuit breaker fault-isolation configurations',
-        'Cascading timeout accumulation caused worker thread exhaustion on edge ingress',
-      ];
+  const evidenceItems =
+    rca?.evidence && rca.evidence.length > 0
+      ? rca.evidence
+      : [
+          `Primary anomaly recorded in ${probableRoot} breaching acceptable latency SLO`,
+          'Dependent callers lacked circuit breaker fault-isolation configurations',
+          'Cascading timeout accumulation caused worker thread exhaustion on edge ingress',
+        ];
 
   let evY = y + 12;
   evidenceItems.slice(0, 3).forEach((item) => {
@@ -273,12 +397,12 @@ export function generateIncidentReportPDF({
 
   y += 35;
 
-  // 6. Synthesized Auto-Remediation & Hardening Patch
+  // 8. Synthesized Auto-Remediation & Hardening Patch
   checkPageBreak(38);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('3. Automated Remediation Patch & Hardening Configuration', margin, y);
+  doc.text('5. Automated Remediation Patch & Hardening Configuration', margin, y);
   y += 5;
 
   doc.setFillColor(248, 250, 252);
@@ -322,12 +446,12 @@ export function generateIncidentReportPDF({
 
   y += 38;
 
-  // 7. Empirical Resilience Benchmarking Table
+  // 9. Empirical Resilience Benchmarking Table
   checkPageBreak(45);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('4. Empirical Resilience Benchmark & Verification Delta', margin, y);
+  doc.text('6. Empirical Resilience Benchmark & Verification Delta', margin, y);
   y += 5;
 
   // Table Header
@@ -416,7 +540,7 @@ export function generateIncidentReportPDF({
 
   y += 8;
 
-  // 8. Signoff & Signature Box
+  // 10. Signoff & Signature Box
   checkPageBreak(24);
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(203, 213, 225);
@@ -430,8 +554,16 @@ export function generateIncidentReportPDF({
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text('Verified under continuous simulation loop. Patch applied with zero unexpected downtime.', margin + 4, y + 10);
-  doc.text('Compliance: ChaosBrain Engineering Standard v2.4 · Cluster State: Synced to Firestore', margin + 4, y + 14);
+  doc.text(
+    'Verified under continuous simulation loop. Patch applied with zero unexpected downtime.',
+    margin + 4,
+    y + 10
+  );
+  doc.text(
+    'Compliance: ChaosBrain Engineering Standard v2.4 · Cluster State: Synced to Firestore',
+    margin + 4,
+    y + 14
+  );
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);

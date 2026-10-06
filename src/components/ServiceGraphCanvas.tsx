@@ -259,6 +259,7 @@ export const ServiceGraphCanvas: React.FC<ServiceGraphCanvasProps> = ({
 
   return (
     <div
+      id="dashboard-service-graph"
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
